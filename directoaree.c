@@ -77,6 +77,7 @@ int main(int argc, char *argv[]) {
     sprintf(header, "Snapshot pentru directorul: %s\n", directory);
     write(snapshotFile, header, strlen(header));
     traverseDirectory(directory, snapshotFile);
+    }
     
     // Închidem fișierul de snapshot
     close(snapshotFile);

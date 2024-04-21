@@ -36,6 +36,8 @@ void traverseDirectory(char *path, int snapshotFile) {
             
             // Salvăm metadatele în fișier
             char metadata[512];
+            char timeBuffer[128];
+            strftime(timeBuffer, sizeof(timeBuffer), "%Y-%m-%d %H:%M:%S", localtime(&fileStat.st_mtime));
             sprintf(metadata, "Nume: %s, Dimensiune: %ld bytes, Ultima modificare: %s", entry->d_name, fileStat.st_size, ctime(&fileStat.st_mtime));
             write(snapshotFile, metadata, strlen(metadata));
             
@@ -51,22 +53,26 @@ void traverseDirectory(char *path, int snapshotFile) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        printf("Utilizare: %s <director>\n", argv[0]);
+    // Verifica nr de argumente
+    if (argc < 3 || argc > 12) {
+        fprintf(stderr, "Usage: %s <output_directory> <directory1> ... <directoryN> (max 10 directories)\n", argv[0]);
         return EXIT_FAILURE;
     }
 
-    // Directorul de monitorizat este dat ca argument în linia de comandă
-    char *directory = argv[1];
+    // Primul arg este output directory pentru fisierul de snapshot
+    char *outputDirectory = argv[1];
+    char outputPath[512];
+    sprintf(outputPath, "%s/Snapshot.txt", outputDirectory);
     
-    // Deschidem fișierul de snapshot pentru scriere (în modul adăugare pentru a actualiza la fiecare rulare)
-    int snapshotFile = open("Snapshot.txt", O_WRONLY | O_APPEND | O_CREAT, S_IRUSR | S_IWUSR);
+    // creaza fisierul de snapshot
+    int snapshotFile = open(outputPath, O_WRONLY | O_APPEND | O_CREAT, S_IRUSR | S_IWUSR);
     if (snapshotFile == -1) {
-        perror("Eroare la crearea sau deschiderea fișierului de snapshot");
+        perror("Error creating or opening the snapshot file");
         return EXIT_FAILURE;
     }
     
     // Scriem metadatele în fișier pentru directorul principal și subdirectoarele sale
+    for(int i = 2; i < argc; i++) {
     char header[512];
     sprintf(header, "Snapshot pentru directorul: %s\n", directory);
     write(snapshotFile, header, strlen(header));
